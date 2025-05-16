@@ -1,0 +1,106 @@
+import { Bot, InlineKeyboard } from "grammy";
+import "dotenv/config";
+import { TextQuote } from "grammy/types";
+
+const bot = new Bot(`${process.env.TELEGRAM_BOT_TOKEN}`);
+let timer: NodeJS.Timeout | undefined;
+let time = 0;
+let totalMinutes = 0;
+// Initial menu
+const start = new InlineKeyboard()
+  .text("Remind 💧", "remind")
+  .text("Stop ❌", "stop")
+  .row()
+  .text("Time ⏰", "time")
+  .text("Update 🔄", "update");
+
+// Remind menu
+const remind = new InlineKeyboard()
+  .text("Select a time ⏲️", "select_time")
+  .text("Stop ❌", "stop")
+  .row()
+  .text("Time ⏰", "time")
+  .text("Update 🔄", "update");
+
+// Start command or any message
+bot.hears(/^\d+\s*(h|m)$/i, async (ctx) => {
+  console.log("Received time");
+  const message = ctx.message?.text?.trim();
+  if (message) {
+    const match = message.match(/^(\d+)\s*(h|m)$/i);
+    console.log(match);
+    if (match) {
+      const value = parseInt(match[1]); // e.g., 30
+      console.log(value);
+      const unit = match[2].toLowerCase(); // e.g., "m"
+      console.log(unit);
+
+      // Example calculation: Convert everything to minutes
+      totalMinutes = unit === "h" ? value * 60 : value;
+      time = totalMinutes;
+      const timer = setInterval(async () => {
+        if (time !== 0) {
+          time -= 1;
+        } else {
+          await ctx.reply("It's time to take sip");
+          time = totalMinutes;
+        }
+      }, 1000 * 60);
+      await ctx.reply(
+        `Timer set for ${totalMinutes > 60 ? totalMinutes / 60 : "00"}:${totalMinutes % 60} minuts`,
+      );
+      await ctx.reply("Set your reminder preferences:", {
+        reply_markup: remind,
+      });
+    } else {
+      await ctx.reply("Invalid format. Please enter like `30m` or `1 h`.");
+    }
+  }
+  await ctx.reply(`Got time duration: ${message}min`);
+});
+
+// Handle button clicks
+bot.callbackQuery("remind", async (ctx) => {
+  await ctx.answerCallbackQuery(); // Acknowledge button press
+  await ctx.reply("Set your reminder preferences:", {
+    reply_markup: remind,
+  });
+});
+
+bot.callbackQuery("select_time", async (ctx) => {
+  await ctx.answerCallbackQuery();
+  await ctx.reply(
+    "Please type the time you want to be reminded (e.g. 1h, 30m):",
+  );
+});
+
+// You can add more callback handlers
+bot.callbackQuery("stop", async (ctx) => {
+  await ctx.answerCallbackQuery();
+  clearInterval(timer);
+  totalMinutes = 0;
+  time = 0;
+  await ctx.reply("Reminders stopped.");
+  await ctx.reply("Set your reminder preferences:", {
+    reply_markup: remind,
+  });
+});
+
+bot.callbackQuery("time", async (ctx) => {
+  await ctx.answerCallbackQuery();
+  if (totalMinutes === 0) {
+    await ctx.reply("Current reminder time: Not set yet.");
+    await ctx.reply("Set your reminder preferences:", {
+      reply_markup: remind,
+    });
+  } else {
+    await ctx.reply(`Time Remaining ${time}.`);
+  }
+});
+
+bot.callbackQuery("update", async (ctx) => {
+  await ctx.answerCallbackQuery();
+  await ctx.reply("You can update your reminder settings now.");
+});
+
+bot.start();
