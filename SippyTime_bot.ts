@@ -13,7 +13,11 @@ const start = new InlineKeyboard()
   .row()
   .text("Time ⏰", "time")
   .text("Update 🔄", "update");
-
+bot.command("start", async (ctx) => {
+  await ctx.reply("Welcome back! 👋 Set your reminder preferences:", {
+    reply_markup: start,
+  });
+});
 // Remind menu
 const remind = new InlineKeyboard()
   .text("Select a time ⏲️", "select_time")
@@ -24,6 +28,7 @@ const remind = new InlineKeyboard()
 
 // Start command or any message
 bot.hears(/^\d+\s*(h|m)$/i, async (ctx) => {
+  clearInterval(timer);
   console.log("Received time");
   const message = ctx.message?.text?.trim();
   if (message) {
@@ -38,7 +43,7 @@ bot.hears(/^\d+\s*(h|m)$/i, async (ctx) => {
       // Example calculation: Convert everything to minutes
       totalMinutes = unit === "h" ? value * 60 : value;
       time = totalMinutes;
-      const timer = setInterval(async () => {
+      timer = setInterval(async () => {
         if (time !== 0) {
           time -= 1;
         } else {
@@ -47,7 +52,7 @@ bot.hears(/^\d+\s*(h|m)$/i, async (ctx) => {
         }
       }, 1000 * 60);
       await ctx.reply(
-        `Timer set for ${totalMinutes > 60 ? totalMinutes / 60 : "00"}:${totalMinutes % 60} minuts`,
+        `Timer set for ${totalMinutes > 60 ? totalMinutes / 60 : "00"}:${totalMinutes % 60} hr`,
       );
       await ctx.reply("Set your reminder preferences:", {
         reply_markup: remind,
@@ -56,12 +61,16 @@ bot.hears(/^\d+\s*(h|m)$/i, async (ctx) => {
       await ctx.reply("Invalid format. Please enter like `30m` or `1 h`.");
     }
   }
-  await ctx.reply(`Got time duration: ${message}min`);
+  await ctx.reply(
+    `Got time duration: ${totalMinutes > 60 ? Math.floor(totalMinutes / 60) : "00"}:${totalMinutes % 60} hr`,
+  );
 });
 
 // Handle button clicks
+
 bot.callbackQuery("remind", async (ctx) => {
-  await ctx.answerCallbackQuery(); // Acknowledge button press
+  await ctx.answerCallbackQuery();
+  console.log("remind");
   await ctx.reply("Set your reminder preferences:", {
     reply_markup: remind,
   });
@@ -94,7 +103,9 @@ bot.callbackQuery("time", async (ctx) => {
       reply_markup: remind,
     });
   } else {
-    await ctx.reply(`Time Remaining ${time}.`);
+    await ctx.reply(
+      `Time Remaining ${time > 60 ? Math.floor(time / 60) : "00"}:${time % 60} hr.`,
+    );
   }
 });
 
