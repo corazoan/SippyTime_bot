@@ -2,13 +2,14 @@
   "name": "tg-bot",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "SippyTime_bot.js",
   "scripts": {
-    "start": "ts-node ./SippyTime_bot.ts",
+    "build": "tsc",
+    "start": "ts-node SippyTime_bot.ts",
     "dev": "ts-node-dev ./SippyTime_bot.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "https://github.com/corazoan",
   "license": "ISC",
   "dependencies": {
     "dotenv": "^16.5.0",

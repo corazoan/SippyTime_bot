@@ -52,7 +52,7 @@ bot.hears(/^\d+\s*(h|m)$/i, async (ctx) => {
         }
       }, 1000 * 60);
       await ctx.reply(
-        `Timer set for ${totalMinutes > 60 ? totalMinutes / 60 : "00"}:${totalMinutes % 60} hr`,
+        `Timer set for ${totalMinutes >= 60 ? Math.floor(totalMinutes / 60) : `00:${totalMinutes}`} hr`,
       );
       await ctx.reply("Set your reminder preferences:", {
         reply_markup: remind,
@@ -62,7 +62,7 @@ bot.hears(/^\d+\s*(h|m)$/i, async (ctx) => {
     }
   }
   await ctx.reply(
-    `Got time duration: ${totalMinutes > 60 ? Math.floor(totalMinutes / 60) : "00"}:${totalMinutes % 60} hr`,
+    `Got time duration: ${totalMinutes >= 60 ? Math.floor(totalMinutes / 60) : `00:${totalMinutes}`}  hr`,
   );
 });
 
@@ -104,7 +104,7 @@ bot.callbackQuery("time", async (ctx) => {
     });
   } else {
     await ctx.reply(
-      `Time Remaining ${time > 60 ? Math.floor(time / 60) : "00"}:${time % 60} hr.`,
+      `Time Remaining ${time >= 60 ? Math.floor(time / 60) : "00"}:${time % 60} hr.`,
     );
   }
 });
