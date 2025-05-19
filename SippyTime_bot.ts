@@ -113,5 +113,19 @@ bot.callbackQuery("update", async (ctx) => {
   await ctx.answerCallbackQuery();
   await ctx.reply("You can update your reminder settings now.");
 });
+async function main() {
+  await bot.api.deleteWebhook({ drop_pending_updates: true }).catch((err) => {
+    console.warn(
+      "Failed to delete webhook (probably not set):",
+      err.description,
+    );
+  });
 
-bot.start();
+  await bot.start({
+    onStart: (botInfo) => {
+      console.log(`Bot started as @${botInfo.username}`);
+    },
+  });
+}
+
+main();
