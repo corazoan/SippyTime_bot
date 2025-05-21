@@ -6,6 +6,7 @@ const bot = new Bot(`${process.env.TELEGRAM_BOT_TOKEN}`);
 let timer: NodeJS.Timeout | undefined;
 let time = 0;
 let totalMinutes = 0;
+
 // Initial menu
 const start = new InlineKeyboard()
   .text("Remind 💧", "remind")
@@ -13,11 +14,13 @@ const start = new InlineKeyboard()
   .row()
   .text("Time ⏰", "time")
   .text("Update 🔄", "update");
+
 bot.command("start", async (ctx) => {
   await ctx.reply("Welcome back! 👋 Set your reminder preferences:", {
     reply_markup: start,
   });
 });
+
 // Remind menu
 const remind = new InlineKeyboard()
   .text("Select a time ⏲️", "select_time")
@@ -26,9 +29,23 @@ const remind = new InlineKeyboard()
   .text("Time ⏰", "time")
   .text("Update 🔄", "update");
 
+const startReminderLoop = async (ctx: any) => {
+  const tick = async () => {
+    if (time > 0) {
+      time -= 1;
+      timer = setTimeout(tick, 1000 * 60);
+    } else {
+      await ctx.reply("It's time to take sip");
+      time = totalMinutes;
+      timer = setTimeout(tick, 1000 * 60);
+    }
+  };
+  tick();
+};
+
 // Start command or any message
 bot.hears(/^\d+\s*(h|m)$/i, async (ctx) => {
-  clearInterval(timer);
+  clearTimeout(timer);
   console.log("Received time");
   const message = ctx.message?.text?.trim();
   if (message) {
@@ -40,17 +57,10 @@ bot.hears(/^\d+\s*(h|m)$/i, async (ctx) => {
       const unit = match[2].toLowerCase(); // e.g., "m"
       console.log(unit);
 
-      // Example calculation: Convert everything to minutes
       totalMinutes = unit === "h" ? value * 60 : value;
       time = totalMinutes;
-      timer = setInterval(async () => {
-        if (time !== 0) {
-          time -= 1;
-        } else {
-          await ctx.reply("It's time to take sip");
-          time = totalMinutes;
-        }
-      }, 1000 * 60);
+      await startReminderLoop(ctx);
+
       await ctx.reply(
         `Timer set for ${totalMinutes >= 60 ? Math.floor(totalMinutes / 60) : `00:${totalMinutes}`} hr`,
       );
@@ -67,7 +77,6 @@ bot.hears(/^\d+\s*(h|m)$/i, async (ctx) => {
 });
 
 // Handle button clicks
-
 bot.callbackQuery("remind", async (ctx) => {
   await ctx.answerCallbackQuery();
   console.log("remind");
@@ -83,10 +92,9 @@ bot.callbackQuery("select_time", async (ctx) => {
   );
 });
 
-// You can add more callback handlers
 bot.callbackQuery("stop", async (ctx) => {
   await ctx.answerCallbackQuery();
-  clearInterval(timer);
+  clearTimeout(timer);
   totalMinutes = 0;
   time = 0;
   await ctx.reply("Reminders stopped.");
@@ -113,6 +121,7 @@ bot.callbackQuery("update", async (ctx) => {
   await ctx.answerCallbackQuery();
   await ctx.reply("You can update your reminder settings now.");
 });
+
 async function main() {
   await bot.api.deleteWebhook({ drop_pending_updates: true }).catch((err) => {
     console.warn(
